@@ -1,4 +1,8 @@
 from transformers import BertTokenizer
+<<<<<<< HEAD
+=======
+import tensorflow as tf
+>>>>>>> initial dataloader
 import torch
 import pandas as pd
 from torch.utils.data import TensorDataset, random_split
@@ -68,9 +72,13 @@ def tokenize_data(path, names, delimiter='\t'):
     # Combine the training inputs into a TensorDataset.
     dataset = TensorDataset(input_ids, attention_masks, labels)
 
+<<<<<<< HEAD
     return dataset, num_labels
 
 
+=======
+    return dataset,num_labels
+>>>>>>> initial dataloader
 def load_data(batch_size):
     # Create a 90-10 train-validation split.
 
@@ -98,6 +106,7 @@ def load_data(batch_size):
     return train_dataloader,validation_dataloader
 
 
+<<<<<<< HEAD
 # path = "./.data/yelp_review_full_csv/train.csv"
 # path = "cola_public/cola_public/raw/in_domain_train.tsv"
 # names=['label', 'sentence']
@@ -112,4 +121,19 @@ train_loader, validation_loader = load_data(batch_size)
     
 print('number of labels = ', num_labels)
 print('Number of train batches = ', len(train_loader))
+=======
+path = "./.data/yelp_review_full_csv/train.csv"
+names=['label', 'sentence']
+dataset,num_labels = tokenize_data(path, names, delimiter=',')
+'''
+path = "./cola_public/cola_public/raw/in_domain_train.tsv"
+names = ['sentence_source', 'label', 'label_notes', 'sentence']
+dataset,num_labels = tokenize_data(path, names)
+'''
+train_loader,validation_loader = load_data(batch_size)
+
+    
+print('number of labels = ', num_labels)
+print('Number of train batches = ',len(train_loader))
+>>>>>>> initial dataloader
 print('Batch size =', batch_size)
