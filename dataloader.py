@@ -11,7 +11,7 @@ NUMBER_OF_SAMPLES = 100
 MAX_LEN = 20
 
 def tokenize_data(path, number_of_samples, names,
-                tokenizer='bert-base-uncased', max_len=20, delimiter='\t'):
+                tokenizer='bert-base-uncased', max_len=None, delimiter='\t'):
     df = pd.read_csv(path, delimiter=delimiter, header=None, names=names)
     df = df.sample(frac=1, random_state=0)[:number_of_samples]
 
@@ -28,15 +28,11 @@ def tokenize_data(path, number_of_samples, names,
         return None, None
     num_labels = len(set(labels))
     unique_labels = df.label.unique().tolist()
-    # max_len = 0
 
     # For every sentence...
     for sent in sentences:
         # Tokenize the text and add `[CLS]` and `[SEP]` tokens.
         input_ids = tokenizer.encode(sent, add_special_tokens=True)
-
-        # Update the maximum sentence length.
-        # max_len = max(max_len, len(input_ids))
 
     print('Max sentence length: ', max_len)
 
