@@ -1,4 +1,4 @@
-from transformers import BertTokenizer
+from transformers import AutoTokenizer
 
 import pandas as pd
 
@@ -6,15 +6,20 @@ import torch
 from torch.utils.data import TensorDataset, random_split
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 
-batch_size = 64
-NUMBER_OF_SAMPLES = 250
+BATCH_SIZE = 32
+NUMBER_OF_SAMPLES = 100
+MAX_LEN = 20
 
-def tokenize_data(path, names, delimiter='\t'):
-    #df = pd.read_csv(path, delimiter=delimiter, header=None, names=names)
+def tokenize_data(path, number_of_samples, names,
+                tokenizer='bert-base-uncased', max_len=20, delimiter='\t'):
     df = pd.read_csv(path, delimiter=delimiter, header=None, names=names)
-    df = df.sample(frac=1)[:NUMBER_OF_SAMPLES]
-    # print(df.head())
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+    df = df.sample(frac=1, random_state=0)[:number_of_samples]
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer,
+        do_lower_case=True
+    )
+
     if "sentence" in names and "label" in names:
         sentences = df.sentence.values
         labels = df.label.values
@@ -23,16 +28,15 @@ def tokenize_data(path, names, delimiter='\t'):
         return None, None
     num_labels = len(set(labels))
     unique_labels = df.label.unique().tolist()
-    max_len = 0
+    # max_len = 0
 
     # For every sentence...
     for sent in sentences:
-
         # Tokenize the text and add `[CLS]` and `[SEP]` tokens.
         input_ids = tokenizer.encode(sent, add_special_tokens=True)
 
         # Update the maximum sentence length.
-        max_len = max(max_len, len(input_ids))
+        # max_len = max(max_len, len(input_ids))
 
     print('Max sentence length: ', max_len)
 
@@ -52,8 +56,8 @@ def tokenize_data(path, names, delimiter='\t'):
         encoded_dict = tokenizer.encode_plus(
                             sent,                      # Sentence to encode.
                             add_special_tokens=True, # Add '[CLS]' and '[SEP]'
-                            max_length=max_len,  
-                            truncation=True,         
+                            max_length=max_len,
+                            truncation=True,      
                             pad_to_max_length=True,   # Pad & truncate all sentences.
                             return_attention_mask=True,   # Construct attn. masks.
                             return_tensors='pt',     # Return pytorch tensors.
@@ -111,11 +115,12 @@ if __name__ == "__main__":
 
     path = "./cola_public/cola_public/raw/in_domain_train.tsv"
     names = ['sentence_source', 'label', 'label_notes', 'sentence']
-    df, dataset, num_labels, unique_labels = tokenize_data(path, names)
 
-    train_loader, validation_loader = load_data(dataset, batch_size)
+    df, dataset, num_labels, unique_labels = tokenize_data(path, NUMBER_OF_SAMPLES,
+                                                            names, max_len=MAX_LEN)
+    train_loader, validation_loader = load_data(dataset, BATCH_SIZE)
 
     print('number of labels = ', num_labels)
     print(f"Unique labels: {unique_labels}")
     print('Number of train batches = ', len(train_loader))
-    print('Batch size =', batch_size)
+    print('Batch size =', BATCH_SIZE)
