@@ -37,12 +37,9 @@ def train(model, train_loader, scheduler, optimizer, loss_function, checkpoint=1
             
         # Perform a backward pass, and update the weights:
         loss.backward() # perform back-propagation
-
-        # Gradient clipping
-        utils.clip_grad_norm_(model.parameters(), 1.0)
-
+        
         optimizer.step() # update the weights
-    scheduler.step() # update the learning rate
+        scheduler.step() # update the learning rate
 
     avg_loss /= len(train_loader)
     
