@@ -22,12 +22,13 @@ def train(model, train_loader, scheduler, optimizer, loss_function, checkpoint=1
         outputs = model(
             ids,
             # token_type_ids=None,
-            attention_mask=mask, 
+            attention_mask=mask,
             labels=labels
         )
         
         loss = outputs.loss
         logits = outputs.logits
+        # print(logits)
 
         if not index % checkpoint:
             print(f"Batch {index}, loss: {loss.item()}")
@@ -49,7 +50,7 @@ def train(model, train_loader, scheduler, optimizer, loss_function, checkpoint=1
 
 
 def evaluate(model, test_loader):
-    model.eval()
+    # model.eval()
 
     avg_loss = 0
     avg_accuracy = 0
@@ -85,7 +86,7 @@ def evaluate(model, test_loader):
 
 # Constants:
 MAX_LEN = 15
-NUMBER_OF_SAMPLES = 500
+NUMBER_OF_SAMPLES = 50
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # Transformers to test:
@@ -95,11 +96,11 @@ TRANSFORMER = [
     'funnel-transformer/small-base',
     'ctrl',
     'transfo-xl-wt103'
-][1]
+][0]
 
 # Hyperparameters:
 EPOCHS = 5
-BATCH_SIZE = 64
+BATCH_SIZE = 5
 LEARNING_RATE = .01
 
 

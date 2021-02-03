@@ -50,13 +50,13 @@ def tokenize_data(path, number_of_samples, names,
         #   (5) Pad or truncate the sentence to `max_length`
         #   (6) Create attention masks for [PAD] tokens.
         encoded_dict = tokenizer.encode_plus(
-                            sent,                      # Sentence to encode.
+                            sent, # Sentence to encode.
                             add_special_tokens=True, # Add '[CLS]' and '[SEP]'
                             max_length=max_len,
-                            truncation=True,      
-                            pad_to_max_length=True,   # Pad & truncate all sentences.
-                            return_attention_mask=True,   # Construct attn. masks.
-                            return_tensors='pt',     # Return pytorch tensors.
+                            truncation=True,
+                            pad_to_max_length=True, # Pad & truncate all sentences.
+                            return_attention_mask=True, # Construct attn. masks.
+                            return_tensors='pt' # Return pytorch tensors.
                     )
         
         # Add the encoded sentence to the list.
