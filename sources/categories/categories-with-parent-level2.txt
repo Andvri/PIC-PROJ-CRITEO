@@ -1,0 +1,212 @@
+Animals & Pet Supplies > Live Animals
+Animals & Pet Supplies > Pet Supplies
+Apparel & Accessories
+Apparel & Accessories > Clothing
+Apparel & Accessories > Clothing Accessories
+Apparel & Accessories > Costumes & Accessories
+Apparel & Accessories > Handbag & Wallet Accessories
+Apparel & Accessories > Handbags, Wallets & Cases
+Apparel & Accessories > Jewelry
+Apparel & Accessories > Shoe Accessories
+Apparel & Accessories > Shoes
+Arts & Entertainment
+Arts & Entertainment > Event Tickets
+Arts & Entertainment > Hobbies & Creative Arts
+Arts & Entertainment > Party & Celebration
+Baby & Toddler
+Baby & Toddler > Baby Bathing
+Baby & Toddler > Baby Gift Sets
+Baby & Toddler > Baby Health
+Baby & Toddler > Baby Safety
+Baby & Toddler > Baby Toys & Activity Equipment
+Baby & Toddler > Baby Transport
+Baby & Toddler > Baby Transport Accessories
+Baby & Toddler > Diapering
+Baby & Toddler > Nursing & Feeding
+Baby & Toddler > Potty Training
+Baby & Toddler > Swaddling & Receiving Blankets
+Business & Industrial
+Business & Industrial > Advertising & Marketing
+Business & Industrial > Agriculture
+Business & Industrial > Automation Control Components
+Business & Industrial > Construction
+Business & Industrial > Dentistry
+Business & Industrial > Film & Television
+Business & Industrial > Finance & Insurance
+Business & Industrial > Food Service
+Business & Industrial > Forestry & Logging
+Business & Industrial > Hairdressing & Cosmetology
+Business & Industrial > Heavy Machinery
+Business & Industrial > Hotel & Hospitality
+Business & Industrial > Industrial Storage
+Business & Industrial > Industrial Storage Accessories
+Business & Industrial > Janitorial Carts & Caddies
+Business & Industrial > Law Enforcement
+Business & Industrial > Manufacturing
+Business & Industrial > Material Handling
+Business & Industrial > Medical
+Business & Industrial > Mining & Quarrying
+Business & Industrial > Piercing & Tattooing
+Business & Industrial > Retail
+Business & Industrial > Science & Laboratory
+Business & Industrial > Signage
+Business & Industrial > Work Safety Protective Gear
+Cameras & Optics
+Cameras & Optics > Camera & Optic Accessories
+Cameras & Optics > Cameras
+Cameras & Optics > Optics
+Cameras & Optics > Photography
+Electronics
+Electronics > Arcade Equipment
+Electronics > Audio
+Electronics > Circuit Boards & Components
+Electronics > Communications
+Electronics > Components
+Electronics > Computers
+Electronics > Electronics Accessories
+Electronics > GPS Accessories
+Electronics > GPS Navigation Systems
+Electronics > GPS Tracking Devices
+Electronics > Marine Electronics
+Electronics > Networking
+Electronics > Print, Copy, Scan & Fax
+Electronics > Radar Detectors
+Electronics > Speed Radars
+Electronics > Toll Collection Devices
+Electronics > Video
+Electronics > Video Game Console Accessories
+Electronics > Video Game Consoles
+Food, Beverages & Tobacco
+Food, Beverages & Tobacco > Beverages
+Food, Beverages & Tobacco > Food Items
+Food, Beverages & Tobacco > Tobacco Products
+Furniture
+Furniture > Baby & Toddler Furniture
+Furniture > Beds & Accessories
+Furniture > Benches
+Furniture > Cabinets & Storage
+Furniture > Carts & Islands
+Furniture > Chair Accessories
+Furniture > Chairs
+Furniture > Entertainment Centers & TV Stands
+Furniture > Furniture Sets
+Furniture > Futon Frames
+Furniture > Futon Pads
+Furniture > Futons
+Furniture > Office Furniture
+Furniture > Office Furniture Accessories
+Furniture > Ottomans
+Furniture > Outdoor Furniture
+Furniture > Outdoor Furniture Accessories
+Furniture > Room Divider Accessories
+Furniture > Room Dividers
+Furniture > Shelving
+Furniture > Shelving Accessories
+Furniture > Sofa Accessories
+Furniture > Sofas
+Furniture > Table Accessories
+Furniture > Tables
+Hardware
+Hardware > Building Consumables
+Hardware > Building Materials
+Hardware > Fencing & Barriers
+Hardware > Fuel
+Hardware > Fuel Containers & Tanks
+Hardware > Hardware Accessories
+Hardware > Hardware Pumps
+Hardware > Heating, Ventilation & Air Conditioning
+Hardware > Locks & Keys
+Hardware > Plumbing
+Hardware > Power & Electrical Supplies
+Hardware > Small Engines
+Hardware > Storage Tanks
+Hardware > Tool Accessories
+Hardware > Tools
+Health & Beauty
+Health & Beauty > Health Care
+Health & Beauty > Jewelry Cleaning & Care
+Health & Beauty > Personal Care
+Home & Garden
+Home & Garden > Bathroom Accessories
+Home & Garden > Business & Home Security
+Home & Garden > Decor
+Home & Garden > Emergency Preparedness
+Home & Garden > Fireplace & Wood Stove Accessories
+Home & Garden > Fireplaces
+Home & Garden > Flood, Fire & Gas Safety
+Home & Garden > Household Appliance Accessories
+Home & Garden > Household Appliances
+Home & Garden > Household Supplies
+Home & Garden > Kitchen & Dining
+Home & Garden > Lawn & Garden
+Home & Garden > Lighting
+Home & Garden > Lighting Accessories
+Home & Garden > Linens & Bedding
+Home & Garden > Parasols & Rain Umbrellas
+Home & Garden > Plants
+Home & Garden > Pool & Spa
+Home & Garden > Smoking Accessories
+Home & Garden > Umbrella Sleeves & Cases
+Home & Garden > Wood Stoves
+Luggage & Bags
+Luggage & Bags > Backpacks
+Luggage & Bags > Briefcases
+Luggage & Bags > Cosmetic & Toiletry Bags
+Luggage & Bags > Diaper Bags
+Luggage & Bags > Dry Boxes
+Luggage & Bags > Duffel Bags
+Luggage & Bags > Fanny Packs
+Luggage & Bags > Garment Bags
+Luggage & Bags > Luggage Accessories
+Luggage & Bags > Messenger Bags
+Luggage & Bags > Shopping Totes
+Luggage & Bags > Suitcases
+Luggage & Bags > Train Cases
+Mature
+Mature > Erotic
+Mature > Weapons
+Media
+Media > Books
+Media > Carpentry & Woodworking Project Plans
+Media > DVDs & Videos
+Media > Magazines & Newspapers
+Media > Music & Sound Recordings
+Media > Product Manuals
+Media > Sheet Music
+Office Supplies
+Office Supplies > Book Accessories
+Office Supplies > Desk Pads & Blotters
+Office Supplies > Filing & Organization
+Office Supplies > General Office Supplies
+Office Supplies > Impulse Sealers
+Office Supplies > Lap Desks
+Office Supplies > Name Plates
+Office Supplies > Office & Chair Mats
+Office Supplies > Office Carts
+Office Supplies > Office Equipment
+Office Supplies > Office Instruments
+Office Supplies > Paper Handling
+Office Supplies > Presentation Supplies
+Office Supplies > Shipping Supplies
+Religious & Ceremonial
+Religious & Ceremonial > Memorial Ceremony Supplies
+Religious & Ceremonial > Religious Items
+Religious & Ceremonial > Wedding Ceremony Supplies
+Software
+Software > Computer Software
+Software > Digital Goods & Currency
+Software > Video Game Software
+Sporting Goods
+Sporting Goods > Athletics
+Sporting Goods > Exercise & Fitness
+Sporting Goods > Indoor Games
+Sporting Goods > Outdoor Recreation
+Toys & Games
+Toys & Games > Game Timers
+Toys & Games > Games
+Toys & Games > Outdoor Play Equipment
+Toys & Games > Puzzles
+Toys & Games > Toys
+Vehicles & Parts
+Vehicles & Parts > Vehicle Parts & Accessories
+Vehicles & Parts > Vehicles
