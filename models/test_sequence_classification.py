@@ -2,10 +2,11 @@ import torch
 from torch.nn import BCELoss, Softmax, utils
 
 from transformers import AutoModelForSequenceClassification, AdamW, \
-                            get_linear_schedule_with_warmup
+                        get_linear_schedule_with_warmup, Trainer, TrainingArguments
 
 
 from dataloader import tokenize_data, load_data
+from time import time
 
 
 def train(model, train_loader, scheduler, optimizer, loss_function, checkpoint=1):
@@ -28,7 +29,6 @@ def train(model, train_loader, scheduler, optimizer, loss_function, checkpoint=1
         
         loss = outputs.loss
         logits = outputs.logits
-        # print(logits)
 
         if not index % checkpoint:
             print(f"Batch {index}, loss: {loss.item()}")
@@ -47,7 +47,7 @@ def train(model, train_loader, scheduler, optimizer, loss_function, checkpoint=1
 
 
 def evaluate(model, test_loader):
-    # model.eval()
+    model.eval()
 
     avg_loss = 0
     avg_accuracy = 0
@@ -83,22 +83,25 @@ def evaluate(model, test_loader):
 
 # Constants:
 MAX_LEN = 15
-NUMBER_OF_SAMPLES = 50
-DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+NUMBER_OF_SAMPLES = 100
+# DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cpu")
 
 # Transformers to test:
 TRANSFORMER = [
     'bert-base-uncased',
-    'facebook/bart-large',
+    'google/mobilebert-uncased',
     'funnel-transformer/small-base',
-    'ctrl',
-    'transfo-xl-wt103'
-][0]
+    'roberta-base',
+    'facebook/bart-base', # bulky
+    # 'ctrl',
+    # 'transfo-xl-wt103'
+][3]
 
 # Hyperparameters:
 EPOCHS = 5
-BATCH_SIZE = 5
-LEARNING_RATE = .01
+BATCH_SIZE = 32
+LEARNING_RATE = 1E-4
 
 
 if __name__ == "__main__":
@@ -134,15 +137,17 @@ if __name__ == "__main__":
 
     # train:
     print("\nTraining:")
+    start = time()
     for epoch in range(1, EPOCHS + 1):
         avg_loss = train(model, train_loader, scheduler, optimizer, loss_function)
         print(f"Epoch {epoch}: BCE: {avg_loss}\n")
+    print(time() - start)
     
     # evaluate:
     avg_loss, avg_accuracy, predictions = evaluate(model, validation_loader)
 
     print("\nValidation:\n"
-          f"Val BCE: {avg_loss}; Val accuracy: {avg_accuracy}")
+          f"Val BCE: {avg_loss:.5f}; Val accuracy: {avg_accuracy:.4f}")
 
     predicted_labels = [unique_labels[idx] for idx in predictions]
     print(predictions)
