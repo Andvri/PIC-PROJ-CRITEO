@@ -36,8 +36,6 @@ dataset_name = "cifar100"
     dataset_name, split=["train", "test"], with_info=True, as_supervised=True
 )
 NUM_CLASSES = ds_info.features["label"].num_classes
-ds_train = ds_train
-
 
 size = (IMG_SIZE, IMG_SIZE)
 ds_train = ds_train.map(lambda image, label: (tf.image.resize(image, size), label))
@@ -97,6 +95,8 @@ with strategy.scope():
 epochs = 25  # @param {type: "slider", min:8, max:80}
 hist = model.fit(ds_train, epochs=epochs, validation_data=ds_test, verbose=2)
 plot_hist(hist)
+
+
 """
 def unfreeze_model(model):
     # We unfreeze the top 20 layers while leaving BatchNorm layers frozen
