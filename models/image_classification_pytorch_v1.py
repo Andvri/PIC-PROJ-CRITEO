@@ -14,7 +14,8 @@ import copy
 
 from dataloader_image import *
 
-data_dir = 'data/hymenoptera_data'
+#data_dir = 'data/hymenoptera_data'
+data_dir = 'data/google taxonomy'
 train_dir = data_dir + '/train'
 test_dir = data_dir + '/val'
 
@@ -24,7 +25,7 @@ lr = 0.001
 momentum = 0.9
 
 step_size = 7
-gamme = 0.1
+gamma = 0.1
 
 model_name = "resnet18"
 my_models = {"resnet18" : models.resnet18}
