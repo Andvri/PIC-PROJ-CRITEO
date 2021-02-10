@@ -10,30 +10,29 @@ BATCH_SIZE = 32
 NUMBER_OF_SAMPLES = 100
 MAX_LEN = 20
 
-def tokenize_data(path, number_of_samples, names,
-                tokenizer='bert-base-uncased', max_len=None, delimiter='\t'):
-    df = pd.read_csv(path, delimiter=delimiter, header=None, names=names)
-    df = df.sample(frac=1, random_state=0)[:number_of_samples]
-
+def tokenize_data(sentences, categories, tokenizer='bert-base-uncased', max_len=None):
     tokenizer = AutoTokenizer.from_pretrained(
         tokenizer,
         do_lower_case=True
     )
 
-    if "sentence" in names and "label" in names:
-        sentences = df.sentence.values
-        labels = df.label.values
-    else :
-        print("EXIT")
-        return None, None
-    num_labels = len(set(labels))
-    unique_labels = df.label.unique().tolist()
+    unique_categories = categories.unique().tolist()
+    num_categories = len(unique_categories)
+    labels = categories.cat.codes
 
     # For every sentence...
     for sent in sentences:
         # Tokenize the text and add `[CLS]` and `[SEP]` tokens.
         input_ids = tokenizer.encode(sent, add_special_tokens=True)
 
+    if not max_len:
+        max_len = 0
+        # For every sentence...
+        for sent in sentences:
+            # Tokenize the text and add `[CLS]` and `[SEP]` tokens.
+            input_ids = tokenizer.encode(sent, add_special_tokens=True)
+            # Update the maximum sentence length.
+            max_len = max(max_len, len(input_ids))
     print('Max sentence length: ', max_len)
 
     # Tokenize all of the sentences and map the tokens to thier word IDs.
@@ -50,14 +49,14 @@ def tokenize_data(path, number_of_samples, names,
         #   (5) Pad or truncate the sentence to `max_length`
         #   (6) Create attention masks for [PAD] tokens.
         encoded_dict = tokenizer.encode_plus(
-                            sent, # Sentence to encode.
-                            add_special_tokens=True, # Add '[CLS]' and '[SEP]'
-                            max_length=max_len,
-                            truncation=True,
-                            pad_to_max_length=True, # Pad & truncate all sentences.
-                            return_attention_mask=True, # Construct attn. masks.
-                            return_tensors='pt' # Return pytorch tensors.
-                    )
+            sent, # Sentence to encode.
+            add_special_tokens=True, # Add '[CLS]' and '[SEP]'
+            max_length=max_len,
+            truncation=True,
+            padding='max_length', # Pad & truncate all sentences.
+            return_attention_mask=True, # Construct attn. masks.
+            return_tensors='pt' # Return pytorch tensors.
+        )
         
         # Add the encoded sentence to the list.
         input_ids.append(encoded_dict['input_ids'])
@@ -73,7 +72,7 @@ def tokenize_data(path, number_of_samples, names,
     # Combine the training inputs into a TensorDataset.
     dataset = TensorDataset(input_ids, attention_masks, labels)
 
-    return df, dataset, num_labels, unique_labels
+    return dataset, num_categories, unique_categories
 
 
 def load_data(dataset, batch_size):
