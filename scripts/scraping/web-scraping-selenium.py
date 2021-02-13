@@ -24,7 +24,7 @@ working_directory = path.dirname(path.dirname(path.dirname(path.realpath(__file_
 # https://chromedriver.chromium.org/downloads
 DRIVER_PATH = working_directory + '/chromedriver'
 urls_scraping = working_directory + '/sources/input-scrapping.json'
-input_csv_path = working_directory + '/sources/input_scraping.csv'
+input_csv_path = working_directory + '/sources/input_scraping_en.csv'
 
 
 sites_show_browser = [
@@ -102,9 +102,9 @@ if __name__ == "__main__":
             print('Description not found')
 
     # Save collected data in csv format:
-    df_data.to_csv(working_directory + "/sources/data.csv")
+    df_data.to_csv(working_directory + "/sources/data_en.csv")
 
     #Write file
-    with open(working_directory + '/sources/data.txt', 'w') as f:
+    with open(working_directory + '/sources/data_en.txt', 'w') as f:
         for d in end_data:
             f.write("%s\n\n" % d)
