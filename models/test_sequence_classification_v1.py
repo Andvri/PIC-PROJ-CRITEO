@@ -2,10 +2,8 @@ import torch
 from torch.nn import BCELoss, Softmax, utils
 
 from transformers import AutoModelForSequenceClassification, AdamW, \
-                        get_linear_schedule_with_warmup, Trainer, TrainingArguments
+                        get_linear_schedule_with_warmup
 
-
-from dataloader import tokenize_data, load_data
 from time import time
 
 
@@ -105,22 +103,30 @@ LEARNING_RATE = 1E-4
 
 
 if __name__ == "__main__":
+    import os
+    import pandas as pd
+    from dataloader import tokenize_data, load_data
+    
+    working_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
     # Load and transform data:
-    path = "./cola_public/cola_public/raw/in_domain_train.tsv"
+    PATH = working_directory + "/cola_public/cola_public/raw/in_domain_train.tsv"
+
     names = ['sentence_source', 'label', 'label_notes', 'sentence']
+    df = pd.read_csv(PATH, delimiter="\t", header=None, names=names)[:NUMBER_OF_SAMPLES]
 
     print("Loading data...")
-    df, dataset, num_labels, unique_labels = tokenize_data(
-        path, NUMBER_OF_SAMPLES,
-        names, max_len=MAX_LEN,
-        tokenizer=TRANSFORMER
+    dataset, num_categories, unique_categories = tokenize_data(
+        df.sentence.values, df.label.astype("category"),
+        max_len=MAX_LEN, tokenizer=TRANSFORMER
     )
+
     train_loader, validation_loader = load_data(dataset, BATCH_SIZE)
 
     # Download model from huggingface.co:
     model = AutoModelForSequenceClassification.from_pretrained(
         TRANSFORMER,
-        num_labels=num_labels,
+        num_labels=num_categories,
         output_attentions=False,
         output_hidden_states=False
     )
@@ -149,5 +155,5 @@ if __name__ == "__main__":
     print("\nValidation:\n"
           f"Val BCE: {avg_loss:.5f}; Val accuracy: {avg_accuracy:.4f}")
 
-    predicted_labels = [unique_labels[idx] for idx in predictions]
+    predicted_labels = [unique_categories[idx] for idx in predictions]
     print(predictions)
