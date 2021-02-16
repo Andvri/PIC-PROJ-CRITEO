@@ -100,6 +100,12 @@ model.fc = nn.Sequential(*list(model.fc.children())[:-1])
 
 model = model.to(device)
 
+model.eval() 
+
+#for param in model.parameters():
+#    param.requires_grad = False
+
+
 print("TRAIN")
 embedding = categories_embedding(model, train_dataloader, num_classes, num_features)
 eval(model, train_dataloader, embedding, class_names)
