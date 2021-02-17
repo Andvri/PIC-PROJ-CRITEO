@@ -24,7 +24,7 @@ working_directory = path.dirname(path.dirname(path.dirname(path.realpath(__file_
 # https://chromedriver.chromium.org/downloads
 DRIVER_PATH = working_directory + '/chromedriver'
 urls_scraping = working_directory + '/sources/input-scrapping.json'
-input_csv_path = working_directory + '/sources/input_scraping_en.csv'
+input_csv_path = working_directory + '/sources/input_scraping_en_train_with_parent.csv'
 
 
 sites_show_browser = [
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         wait = 0
         if show_browser:
             options.headless = True
-            wait = 2
+            wait = 10
         else:
             options.headless = False
             
@@ -87,24 +87,30 @@ if __name__ == "__main__":
         """Scrape page description."""
         description = None
         if soup.find("meta", {"name": "description"}):
-            description = soup.find("meta", {"name": "description"})['content']
+            description = soup.find("meta", {"name": "description"}).get('content', None)
         elif soup.find("meta", {"name": "og:description"}):
-            description = soup.find("meta", {"name": "og:description"})['content']
+            description = soup.find("meta", {"name": "og:description"}).get('content', None)
         elif soup.find("meta", {"name": "twitter:description"}):
-            description = soup.find("meta", {"name": "twitter:description"})['content']
+            description = soup.find("meta", {"name": "twitter:description"}).get('content', None)
+        elif soup.find("meta", {"property": "description"}):
+            description = soup.find("meta", {"property": "description"}).get('content', None)
+        elif soup.find("meta", {"property": "og:description"}):
+            description = soup.find("meta", {"property": "og:description"}).get('content', None)
+        elif soup.find("meta", {"property": "twitter:description"}):
+            description = soup.find("meta", {"property": "twitter:description"}).get('content', None)
         
         if description:
             end_data.append('\n'.join([row.URL, description, row.category]))
-            df_data.loc[index, 'description'] = description # add descrption
+            df_data.loc[index, 'description'] = description # add description
             print('Done')
         else:
             df_data.loc[index, 'description'] = None # leave an empty case
             print('Description not found')
 
     # Save collected data in csv format:
-    df_data.to_csv(working_directory + "/sources/data_en.csv")
+    df_data.to_csv(working_directory + "/sources/data_en_train_with_parent.csv")
 
     #Write file
-    with open(working_directory + '/sources/data_en.txt', 'w') as f:
+    with open(working_directory + '/sources/data_en_train_with_parent.txt', 'w') as f:
         for d in end_data:
             f.write("%s\n\n" % d)
