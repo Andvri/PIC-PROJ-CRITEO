@@ -21,9 +21,14 @@ test_dir = data_dir + '/val'
 
 batch_size = 4
 
-model_name = "resnet18"
-my_models = {"resnet18" : models.resnet18}
-input_size = {"resnet18" : 224}
+model_name = "vgg11"
+my_models = {"resnet18" : models.resnet18,
+             "resnet34" : models.resnet34,
+             "resnet50" : models.resnet50,
+             "alexnet" : models.alexnet,
+             "vgg11" : models.vgg11_bn
+            }
+input_size = {"resnet18" : 224, "resnet34": 224, "resnet50": 224, "alexnet": 224, "vgg11":224}
 
 
 
@@ -92,23 +97,26 @@ def eval(model, test_dataloader, embedding, class_names):
             #print("predicted class : ", class_names[label_predict])
             #print("---------------------------------")
     print("accuracy", correct/(len(test_dataloader)*batch_size))
+    return correct/(len(test_dataloader)*batch_size)
 
 model = my_models[model_name](pretrained=True)
-num_features = model.fc.in_features
-model.fc = nn.Sequential(*list(model.fc.children())[:-1])
+if model_name in {"resnet18", "resnet34", "resnet50"}:
+    num_features = model.fc.in_features
+    model.fc = nn.Sequential(*list(model.fc.children())[:-1])
+elif model_name in {"alexnet", "vgg11"} :
+    num_features = model.classifier[6].in_features
+    model.classifier[6] = nn.Sequential(*list(model.classifier[6].children())[:-1])
+
+
 
 
 model = model.to(device)
 
 model.eval() 
 
-#for param in model.parameters():
-#    param.requires_grad = False
-
-
 print("TRAIN")
 embedding = categories_embedding(model, train_dataloader, num_classes, num_features)
-eval(model, train_dataloader, embedding, class_names)
+accuracy_train = eval(model, train_dataloader, embedding, class_names)
 print("TEST")
-eval(model, test_dataloader, embedding, class_names)
+accuracy_test = eval(model, test_dataloader, embedding, class_names)
 

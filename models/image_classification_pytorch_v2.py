@@ -13,7 +13,7 @@ import os
 import copy
 
 from dataloader_image import *
-
+from saveFig import *
 #data_dir = 'data/hymenoptera_data'
 data_dir = 'data/google taxonomy'
 train_dir = data_dir + '/train'
@@ -27,9 +27,14 @@ momentum = 0.9
 step_size = 7
 gamme = 0.1
 
-model_name = "resnet18"
-my_models = {"resnet18" : models.resnet18}
-input_size = {"resnet18" : 224}
+model_name = "vgg11"
+my_models = {"resnet18" : models.resnet18,
+             "resnet34" : models.resnet34,
+             "resnet50" : models.resnet50,
+             "alexnet" : models.alexnet,
+             "vgg11" : models.vgg11_bn
+            }
+input_size = {"resnet18" : 224, "resnet34": 224, "resnet50": 224, "alexnet": 224, "vgg11":224}
 
 
 # Data augmentation and normalization for training
@@ -57,7 +62,10 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
 
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
-
+    accuracies_train = []
+    losses_train = []
+    accuracies_test = []
+    losses_test = []
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
@@ -103,6 +111,13 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects.double() / dataset_sizes[phase]
 
+            if phase == 'train':
+                accuracies_train.append(epoch_acc)
+                losses_train.append(epoch_loss)
+            else :
+                accuracies_test.append(epoch_acc)
+                losses_test.append(epoch_loss)
+
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
 
@@ -120,7 +135,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
 
     # load best model weights
     model.load_state_dict(best_model_wts)
-    return model
+    return model, accuracies_train, accuracies_test, losses_train, losses_test
 
 model = my_models[model_name](pretrained=True)
 
@@ -128,18 +143,34 @@ for param in model.parameters():
     param.requires_grad = False
 
 # Parameters of newly constructed modules have requires_grad=True by default
-num_ftrs = model.fc.in_features
-model.fc = nn.Linear(num_ftrs, num_classes)
+if model_name in {"resnet18", "resnet34", "resnet50"}:
+    num_ftrs = model.fc.in_features
+    model.fc = nn.Linear(num_ftrs, num_classes)
+    model = model.to(device)
+    criterion = nn.CrossEntropyLoss()
+    # Observe that only parameters of final layer are being optimized as
+    # opposed to before.
+    optimizer = optim.SGD(model.fc.parameters(), lr=lr, momentum=momentum)
 
-model = model.to(device)
 
-criterion = nn.CrossEntropyLoss()
+elif model_name in {"alexnet", "vgg11"} :
+    num_ftrs = model.classifier[6].in_features
+    model.classifier[6] = nn.Linear(num_ftrs,num_classes)
+    model = model.to(device)
+    criterion = nn.CrossEntropyLoss()
+    # Observe that only parameters of final layer are being optimized as
+    # opposed to before.
+    optimizer = optim.SGD(model.classifier[6].parameters(), lr=lr, momentum=momentum)
 
-# Observe that only parameters of final layer are being optimized as
-# opposed to before.
-optimizer = optim.SGD(model.fc.parameters(), lr=lr, momentum=momentum)
+
+
+
+
 
 # Decay LR by a factor of 0.1 every 7 epochs
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamme)
 
-model = train_model(model, criterion, optimizer, exp_lr_scheduler, num_epochs=epochs)
+model,accuracies_train, accuracies_test,losses_train, losses_test = train_model(model, criterion, optimizer, exp_lr_scheduler, num_epochs=epochs)
+
+saveFig(model_name, 'accuracy', accuracies_train, accuracies_test, 2)
+saveFig(model_name, 'loss', losses_train, losses_test, 2)
