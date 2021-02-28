@@ -63,11 +63,8 @@ def tokenize_data(sentences, categories, tokenizer='bert-base-uncased', max_len=
     input_ids = torch.cat(input_ids, dim=0)
     attention_masks = torch.cat(attention_masks, dim=0)
     labels = torch.tensor(labels)
-
-    # Combine the training inputs into a TensorDataset.
-    dataset = TensorDataset(input_ids, attention_masks, labels)
-
-    return dataset, num_categories, unique_categories
+    
+    return input_ids, attention_masks, labels, num_categories, unique_categories
 
 
 def load_data(train_dataset, batch_size, val=True):
@@ -76,21 +73,23 @@ def load_data(train_dataset, batch_size, val=True):
 
         # Calculate the number of samples to include in each set.
         train_size = int(0.9 * len(train_dataset))
-        val_size = len(dataset) - train_size
+        val_size = len(train_dataset) - train_size
 
         # Divide the dataset by randomly selecting samples.
         train_dataset, val_dataset = random_split(train_dataset, [train_size, val_size])
 
-        print('{:>5,} training samples'.format(train_size))
-        print('{:>5,} validation samples'.format(val_size))
+        print('{} training samples'.format(train_size))
+        print('{} validation samples'.format(val_size))
 
         # For validation the order doesn't matter, so we'll just read them sequentially.
         validation_dataloader = DataLoader(
                 val_dataset, # The validation samples.
-                sampler=SequentialSampler(val_dataset), # Pull out batches sequentially.
+                # sampler=SequentialSampler(val_dataset), # Pull out batches sequentially.
                 batch_size=batch_size # Evaluate with this batch size.
             )
-
+    else:
+        print('{} training samples'.format(len(train_dataset)))
+    
     train_dataloader = DataLoader(
             train_dataset,  # The training samples.
             # sampler=RandomSampler(train_dataset), # Select batches randomly

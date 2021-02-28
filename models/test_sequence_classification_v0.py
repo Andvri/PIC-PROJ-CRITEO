@@ -75,6 +75,7 @@ if __name__ == "__main__":
     import os
     import pandas as pd
     from matplotlib import pyplot as plt
+    from torch.utils.data import TensorDataset
     from transformers import AutoModel, AdamW
     
     from dataloader import tokenize_data, load_data
@@ -92,22 +93,23 @@ if __name__ == "__main__":
             df = pd.read_csv(working_directory + "/sources/" + dataset, index_col=0)
             df.category = df.category.apply(lambda x: x.replace(" >", ""))
             df.category = df.category.astype("category")
-            print(df)
 
             accuracies = []
             for max_len in max_lengths:
                 df_current = df.copy()
 
                 print("Transforming data...")
-                category_dataset, num_categories, unique_categories = tokenize_data(
+                input_ids, attention_masks, labels, num_categories, unique_categories = tokenize_data(
                     df_current.category.values, df_current.category,
                     max_len=None, tokenizer=transformer
                 )
+                category_dataset = TensorDataset(input_ids, attention_masks, labels)
 
-                description_dataset, num_categories, unique_categories = tokenize_data(
+                input_ids, attention_masks, labels, num_categories, unique_categories = tokenize_data(
                     df_current.description.values, df_current.category,
                     max_len=max_len, tokenizer=transformer
                 )
+                description_dataset = TensorDataset(input_ids, attention_masks, labels)
 
                 train_cat_loader = load_data(category_dataset, BATCH_SIZE, val=False)
                 test_description_loader = load_data(description_dataset, BATCH_SIZE, val=False)
