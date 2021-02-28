@@ -1,15 +1,12 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-import os.path
-from os import path
 from bs4 import BeautifulSoup
 import time
-import os.path
 from os import path
 import json
 import numpy as np
 import pandas as pd
-from IPython.display import display
+from googlesearch import search
 
 # TODO: Make Refactoring
 
@@ -22,10 +19,11 @@ working_directory = path.dirname(path.dirname(path.dirname(path.realpath(__file_
 
 # Chromedriver must be in the root of the project
 # https://chromedriver.chromium.org/downloads
+NUMBER_OF_REQUESTS = 1000
+CATEGORY = "Media > Books"
 DRIVER_PATH = working_directory + '/chromedriver'
 urls_scraping = working_directory + '/sources/input-scrapping.json'
 input_csv_path = working_directory + '/sources/input_scraping_en_train_with_parent.csv'
-
 
 sites_show_browser = [
     'amazon',
@@ -34,11 +32,9 @@ sites_show_browser = [
     'rakuten'
 ]
 
-
 # Url of the page we want to scrape:
-with open(urls_scraping) as f:
-    data = json.load(f)
-
+# with open(urls_scraping) as f:
+#     data = json.load(f)
 
 
 if __name__ == "__main__":
@@ -51,19 +47,25 @@ if __name__ == "__main__":
     # df.category = df.category.apply(lambda x: x.split(">")[-1].strip())
     # display(df)
     # df.to_csv(working_directory + "/sources/input_scraping.csv")
-    
+
+    search_results = search("books buy online", num_results=NUMBER_OF_REQUESTS, lang="en")
+    print(len(search_results))
+
     # Load an input csv:
-    df = pd.read_csv(input_csv_path, header=0, index_col=0)
-    display(df)
+    # df = pd.read_csv(input_csv_path, header=0, index_col=0)
+    # display(df)
 
     # The dataframe to store scraped data:
-    df_data = df.copy()
-    df_data.rename(columns={"URL": "description"}, inplace=True)
+    # df_data = df.copy()
+    # df_data.rename(columns={"URL": "description"}, inplace=True)
+    df_data = pd.DataFrame(data={"description": [""] * NUMBER_OF_REQUESTS, "category": [CATEGORY] * NUMBER_OF_REQUESTS})
 
-    for index, row in df.iterrows():
-        print('\nRetrieving: '+ row.URL)
+    # for index, row in df.iterrows():
+    #     print('\nRetrieving: '+ row.URL)
+    for index, url in enumerate(search_results):
+        print(f'\n{index} Retrieving: {url}')
 
-        show_browser = not bool([site for site in sites_show_browser if(site in row.URL)])
+        show_browser = not bool([site for site in sites_show_browser if(site in url)])
         wait = 0
         if show_browser:
             options.headless = True
@@ -74,13 +76,11 @@ if __name__ == "__main__":
 
         driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
         driver.implicitly_wait(wait)
-        driver.get(row.URL)
+        driver.get(url)
         # Now, we could simply apply bs4 to request variable
         soup = BeautifulSoup(driver.page_source, 'html.parser')
 
-
         driver.quit()
-
 
         time.sleep(1)
         
@@ -100,7 +100,7 @@ if __name__ == "__main__":
             description = soup.find("meta", {"property": "twitter:description"}).get('content', None)
         
         if description:
-            end_data.append('\n'.join([row.URL, description, row.category]))
+            end_data.append('\n'.join([url, description, CATEGORY]))
             df_data.loc[index, 'description'] = description # add description
             print('Done')
         else:
@@ -108,9 +108,9 @@ if __name__ == "__main__":
             print('Description not found')
 
     # Save collected data in csv format:
-    df_data.to_csv(working_directory + "/sources/data_en_train_with_parent.csv")
+    df_data.to_csv(working_directory + "/sources/data_books_test.csv")
 
     #Write file
-    with open(working_directory + '/sources/data_en_train_with_parent.txt', 'w') as f:
+    with open(working_directory + '/sources/data_books_test.txt', 'w') as f:
         for d in end_data:
             f.write("%s\n\n" % d)
