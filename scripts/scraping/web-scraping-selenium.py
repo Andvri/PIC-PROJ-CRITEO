@@ -7,6 +7,7 @@ import json
 import numpy as np
 import pandas as pd
 from googlesearch import search
+from IPython import display
 
 # TODO: Make Refactoring
 
