@@ -19,8 +19,6 @@ working_directory = path.dirname(path.dirname(path.dirname(path.realpath(__file_
 
 # Chromedriver must be in the root of the project
 # https://chromedriver.chromium.org/downloads
-NUMBER_OF_REQUESTS = 1000
-CATEGORY = "Media > Books"
 DRIVER_PATH = working_directory + '/chromedriver'
 urls_scraping = working_directory + '/sources/input-scrapping.json'
 input_csv_path = working_directory + '/sources/input_scraping_en_train_with_parent.csv'
@@ -40,32 +38,18 @@ sites_show_browser = [
 if __name__ == "__main__":
     end_data = []
 
-    # # Save data in .csv format:
-    # df = pd.DataFrame(data=data, columns=["URL", "category"])
-    # df.to_csv(working_directory + "/sources/input_scraping_with_parent.csv")
-    
-    # df.category = df.category.apply(lambda x: x.split(">")[-1].strip())
-    # display(df)
-    # df.to_csv(working_directory + "/sources/input_scraping.csv")
-
-    search_results = search("books buy online", num_results=NUMBER_OF_REQUESTS, lang="en")
-    print(len(search_results))
-
     # Load an input csv:
-    # df = pd.read_csv(input_csv_path, header=0, index_col=0)
-    # display(df)
+    df = pd.read_csv(input_csv_path, header=0, index_col=0)
+    display(df)
 
     # The dataframe to store scraped data:
-    # df_data = df.copy()
-    # df_data.rename(columns={"URL": "description"}, inplace=True)
-    df_data = pd.DataFrame(data={"description": [""] * NUMBER_OF_REQUESTS, "category": [CATEGORY] * NUMBER_OF_REQUESTS})
+    df_data = df.copy()
+    df_data.rename(columns={"URL": "description"}, inplace=True)
 
-    # for index, row in df.iterrows():
-    #     print('\nRetrieving: '+ row.URL)
-    for index, url in enumerate(search_results):
-        print(f'\n{index} Retrieving: {url}')
+    for index, row in df.iterrows():
+        print('\nRetrieving: '+ row.URL)
 
-        show_browser = not bool([site for site in sites_show_browser if(site in url)])
+        show_browser = not bool([site for site in sites_show_browser if(site in row.URL)])
         wait = 0
         if show_browser:
             options.headless = True
@@ -76,7 +60,7 @@ if __name__ == "__main__":
 
         driver = webdriver.Chrome(options=options, executable_path=DRIVER_PATH)
         driver.implicitly_wait(wait)
-        driver.get(url)
+        driver.get(row.URL)
         # Now, we could simply apply bs4 to request variable
         soup = BeautifulSoup(driver.page_source, 'html.parser')
 
@@ -100,7 +84,7 @@ if __name__ == "__main__":
             description = soup.find("meta", {"property": "twitter:description"}).get('content', None)
         
         if description:
-            end_data.append('\n'.join([url, description, CATEGORY]))
+            end_data.append('\n'.join([row.URL, description, row.category]))
             df_data.loc[index, 'description'] = description # add description
             print('Done')
         else:
