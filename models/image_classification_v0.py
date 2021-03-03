@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
+from torch.utils.data import ConcatDataset
+from sklearn.model_selection import KFold
 import numpy as np
 import torchvision
 from torchvision import datasets, models, transforms
@@ -19,9 +21,12 @@ data_dir = 'data/google taxonomy'
 train_dir = data_dir + '/train'
 test_dir = data_dir + '/val'
 
-batch_size = 4
+cross_val = True
+k_folds = 5
 
-model_name = "vgg11"
+batch_size = 1
+
+model_name = "resnet50"
 my_models = {"resnet18" : models.resnet18,
              "resnet34" : models.resnet34,
              "resnet50" : models.resnet50,
@@ -114,9 +119,39 @@ model = model.to(device)
 
 model.eval() 
 
-print("TRAIN")
-embedding = categories_embedding(model, train_dataloader, num_classes, num_features)
-accuracy_train = eval(model, train_dataloader, embedding, class_names)
-print("TEST")
-accuracy_test = eval(model, test_dataloader, embedding, class_names)
+if cross_val :
+    print("CROSS VALIDATION with ", k_folds," folds")
+    
+    train_dataset = datasets.ImageFolder(train_dir,data_transforms['train'])
+    test_dataset = datasets.ImageFolder(test_dir,data_transforms['val'])
+
+    dataset = ConcatDataset([train_dataset, test_dataset])
+    kfold = KFold(n_splits=k_folds, shuffle=True)
+    train_accuracy = 0
+    test_accuracy = 0
+    for fold, (train_ids, test_ids) in enumerate(kfold.split(dataset)):
+
+        train_subsampler = torch.utils.data.SubsetRandomSampler(train_ids)
+        test_subsampler = torch.utils.data.SubsetRandomSampler(test_ids)
+
+        train_dataloader = torch.utils.data.DataLoader(
+                      dataset, 
+                      batch_size=batch_size, sampler=train_subsampler)
+        test_dataloader = torch.utils.data.DataLoader(
+                      dataset,
+                      batch_size=batch_size, sampler=test_subsampler)
+
+        embedding = categories_embedding(model, train_dataloader, num_classes, num_features)
+        train_accuracy += eval(model, train_dataloader, embedding, class_names)
+        test_accuracy += eval(model, test_dataloader, embedding, class_names)
+    train_accuracy /= k_folds
+    test_accuracy /= k_folds
+    print('average train accuracy = ', train_accuracy)
+    print('average test accuracy = ', test_accuracy)
+else :
+    print("TRAIN")
+    embedding = categories_embedding(model, train_dataloader, num_classes, num_features)
+    accuracy_train = eval(model, train_dataloader, embedding, class_names)
+    print("TEST")
+    accuracy_test = eval(model, test_dataloader, embedding, class_names)
 

@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
+from torch.utils.data import ConcatDataset
+from sklearn.model_selection import KFold
 import numpy as np
 import torchvision
 from torchvision import datasets, models, transforms
@@ -19,15 +21,18 @@ data_dir = 'data/google taxonomy'
 train_dir = data_dir + '/train'
 test_dir = data_dir + '/val'
 
+cross_val = True
+k_folds = 5
+
 batch_size = 4
 epochs = 25
 lr = 0.001
 momentum = 0.9
 
 step_size = 7
-gamme = 0.1
+gamma = 0.1
 
-model_name = "vgg11"
+model_name = "alexnet"
 my_models = {"resnet18" : models.resnet18,
              "resnet34" : models.resnet34,
              "resnet50" : models.resnet50,
@@ -57,7 +62,7 @@ train_dataloader, test_dataloader, dataset_sizes, class_names= dataloader(train_
 num_classes = len(class_names)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
+def train_model(model,train_dataloader, test_dataloader, criterion, optimizer, scheduler, num_epochs):
     since = time.time()
 
     best_model_wts = copy.deepcopy(model.state_dict())
@@ -137,40 +142,95 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     model.load_state_dict(best_model_wts)
     return model, accuracies_train, accuracies_test, losses_train, losses_test
 
-model = my_models[model_name](pretrained=True)
 
-for param in model.parameters():
-    param.requires_grad = False
+if cross_val :
+    print("CROSS VALIDATION with ", k_folds," folds")
+    
+    train_dataset = datasets.ImageFolder(train_dir,data_transforms['train'])
+    test_dataset = datasets.ImageFolder(test_dir,data_transforms['val'])
 
-# Parameters of newly constructed modules have requires_grad=True by default
-if model_name in {"resnet18", "resnet34", "resnet50"}:
-    num_ftrs = model.fc.in_features
-    model.fc = nn.Linear(num_ftrs, num_classes)
-    model = model.to(device)
-    criterion = nn.CrossEntropyLoss()
-    # Observe that only parameters of final layer are being optimized as
-    # opposed to before.
-    optimizer = optim.SGD(model.fc.parameters(), lr=lr, momentum=momentum)
+    dataset = ConcatDataset([train_dataset, test_dataset])
+    kfold = KFold(n_splits=k_folds, shuffle=True)
+    train_accuracy = 0
+    test_accuracy = 0
+    for fold, (train_ids, test_ids) in enumerate(kfold.split(dataset)):
+        model = my_models[model_name](pretrained=True)
 
+        for param in model.parameters():
+            param.requires_grad = False
 
-elif model_name in {"alexnet", "vgg11"} :
-    num_ftrs = model.classifier[6].in_features
-    model.classifier[6] = nn.Linear(num_ftrs,num_classes)
-    model = model.to(device)
-    criterion = nn.CrossEntropyLoss()
-    # Observe that only parameters of final layer are being optimized as
-    # opposed to before.
-    optimizer = optim.SGD(model.classifier[6].parameters(), lr=lr, momentum=momentum)
-
-
-
-
+        # Parameters of newly constructed modules have requires_grad=True by default
+        if model_name in {"resnet18", "resnet34", "resnet50"}:
+            num_ftrs = model.fc.in_features
+            model.fc = nn.Linear(num_ftrs, num_classes)
+            model = model.to(device)
+            criterion = nn.CrossEntropyLoss()
+            # Observe that only parameters of final layer are being optimized as
+            # opposed to before.
+            optimizer = optim.SGD(model.fc.parameters(), lr=lr, momentum=momentum)
 
 
-# Decay LR by a factor of 0.1 every 7 epochs
-exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamme)
+        elif model_name in {"alexnet", "vgg11"} :
+            num_ftrs = model.classifier[6].in_features
+            model.classifier[6] = nn.Linear(num_ftrs,num_classes)
+            model = model.to(device)
+            criterion = nn.CrossEntropyLoss()
+            # Observe that only parameters of final layer are being optimized as
+            # opposed to before.
+            optimizer = optim.SGD(model.classifier[6].parameters(), lr=lr, momentum=momentum)
 
-model,accuracies_train, accuracies_test,losses_train, losses_test = train_model(model, criterion, optimizer, exp_lr_scheduler, num_epochs=epochs)
+        # Decay LR by a factor of 0.1 every 7 epochs
+        exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
+        print("-----------------Fold" ,fold,"-------------------")
 
-saveFig(model_name, 'accuracy', accuracies_train, accuracies_test, 2)
-saveFig(model_name, 'loss', losses_train, losses_test, 2)
+        train_subsampler = torch.utils.data.SubsetRandomSampler(train_ids)
+        test_subsampler = torch.utils.data.SubsetRandomSampler(test_ids)
+
+        train_dataloader = torch.utils.data.DataLoader(
+                      dataset, 
+                      batch_size=batch_size, sampler=train_subsampler)
+        test_dataloader = torch.utils.data.DataLoader(
+                      dataset,
+                      batch_size=batch_size, sampler=test_subsampler)
+        dataset_sizes = {'train': len(train_dataloader)*batch_size, 'val':len(test_dataloader)*batch_size}
+
+        _,accuracies_train, accuracies_test,losses_train, losses_test = train_model(model,train_dataloader, test_dataloader, criterion, optimizer, exp_lr_scheduler, num_epochs=epochs)
+
+        train_accuracy += accuracies_train[-1].item()
+        test_accuracy += accuracies_test[-1].item()
+    train_accuracy /= k_folds
+    test_accuracy /= k_folds
+    print('average train accuracy = ', train_accuracy)
+    print('average test accuracy = ', test_accuracy)
+
+else :
+    model = my_models[model_name](pretrained=True)
+
+    for param in model.parameters():
+        param.requires_grad = False
+
+    # Parameters of newly constructed modules have requires_grad=True by default
+    if model_name in {"resnet18", "resnet34", "resnet50"}:
+        num_ftrs = model.fc.in_features
+        model.fc = nn.Linear(num_ftrs, num_classes)
+        model = model.to(device)
+        criterion = nn.CrossEntropyLoss()
+        # Observe that only parameters of final layer are being optimized as
+        # opposed to before.
+        optimizer = optim.SGD(model.fc.parameters(), lr=lr, momentum=momentum)
+
+
+    elif model_name in {"alexnet", "vgg11"} :
+        num_ftrs = model.classifier[6].in_features
+        model.classifier[6] = nn.Linear(num_ftrs,num_classes)
+        model = model.to(device)
+        criterion = nn.CrossEntropyLoss()
+        # Observe that only parameters of final layer are being optimized as
+        # opposed to before.
+        optimizer = optim.SGD(model.classifier[6].parameters(), lr=lr, momentum=momentum)
+
+    # Decay LR by a factor of 0.1 every 7 epochs
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
+    model,accuracies_train, accuracies_test,losses_train, losses_test = train_model(model,train_dataloader, test_dataloader, criterion, optimizer, exp_lr_scheduler, num_epochs=epochs)
+    saveFig(model_name, 'accuracy', accuracies_train, accuracies_test, 2)
+    saveFig(model_name, 'loss', losses_train, losses_test, 2)
