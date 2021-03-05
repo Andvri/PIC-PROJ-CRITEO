@@ -7,53 +7,68 @@ from googlesearch import search
 
 working_directory = path.dirname(path.dirname(path.dirname(path.realpath(__file__))))
 
-REQUESTS_PER_CATEGORY = 1000
+TIME_DELAY = 120
+RESULTS_PER_CATEGORY = 1000
 CATEGORIES = {
     "Electronics > Computers": {
         "request_list": [
-            "Lenovo", "Apple", "HP", "Dell", "Acer", "Asus", "Microsoft", "Alienware", "Legion"
+            "Lenovo", "Apple",
+            "HP", "Dell", "Acer", 
+            "Asus", "Microsoft", "Alienware", "Legion"
         ],
         "general_search": "Computers"
     },
-    "Electronics > Communications":  {
+    "Electronics > Communications": {
         "request_list": [
-            "Iphone", "Google Pixel", "Xiaomi", "Huawei", "Samsung", "OnePlus", "LG", "Nokia", "Motorola", "HTC"
+            "Iphone", "Google Pixel",
+            "Xiaomi", "Huawei", "Samsung", "OnePlus",
+            "LG", "Nokia", "Motorola", "HTC"
         ],
         "general_search": "Smartphones"
     },
-    "Apparel & Accessories > Jewelry":  {
+    "Apparel & Accessories > Jewelry": {
         "request_list": [
-            "Necklace", "Bracelet", "Earrings", "Rings" "Amethyst", "Aquamarine", "Diamond", "Emerald",
-            "Peridot", "Ruby", "Sapphire", "Topaz",  "Turquoise", "Diamond", "Golden", "Silver", "Jade"
+            "Necklace", "Bracelet",
+            "Earrings", "Rings", "Amethyst",
+            "Aquamarine", "Diamond", "Ruby",
+            "Sapphire", "Golden", "Silver"
         ],
         "general_search": "Jewels"
     },
-    "Vehicles & Parts > Vehicle Parts & Accessories":  {
+    "Vehicles & Parts > Vehicle Parts & Accessories": {
         "request_list": [
-            "Bumper", "Radiator", "Spoiler", "Tires", "Rims", "Breaks", "Windshields", "Windows", "Headlights"
+            "Bumper", "Radiator", "Spoiler",
+            "Tires", "Rims", "Breaks",
+            "Windshields", "Windows", "Headlights"
         ],
         "general_search": "Car parts"
     },
-    "Software > Computer Software":  {
+    "Software > Computer Software": {
         "request_list": [
-            "PC games", "Console games", "Antivirus", "System", "Device drivers", "Multimedia", "Graphics", "Database", "Word Processors"
+            "PC games", "Console games", "Antivirus",
+            "System", "Device drivers", "Multimedia",
+            "Graphics", "Database", "Word Processors"
         ],
         "general_search": "Software"
     },
-    "Apparel & Accessories > Clothing":  {
+    "Apparel & Accessories > Clothing": {
         "request_list": [
-            "Polo", "Dresses", "Hoodies", "T-shirts", "Flip-flops", "Shorts", "Skirts", "Jeans", "Shoes", "Coats",
-            "Shirts", "Socks", "Suits", "Caps", "Scarfs", "Underwear", "Sweaters", "Jackets", "Hats"
+            "Polo", "Dresses", "Hoodies",
+            "T-shirts", "Flip-flops", "Shorts",
+            "Skirts", "Jeans", "Shoes",
+            "Coats", "Shirts", "Socks",
+            "Suits", "Caps", "Scarfs",
+            "Underwear", "Sweaters", "Jackets", "Hats"
         ],
         "general_search": "Clothes"
     },
-    "Furniture > Chairs":  {
+    "Furniture > Chairs": {
         "request_list": [
             "Desk", "Rocking", "Office", "Garden", "Stool", "Armchair", "Baby", "Lounge", "Side"
         ],
         "general_search": "Chairs"
     },
-    "Media > Books":  {
+    "Media > Books": {
         "request_list": [
             "Pride and Prejudice", "To Kill a Mockingbird", "Nineteen Eighty-Four", "Buddenbrooks", "The Grapes of Wrath", "Beloved", "The Code of the Woosters", "Dracula",
             "The Great Gatsby", "One Hundred Years of Solitude", "In Cold Blood", "Wide Sargasso Sea", "Brave New World", "I Capture The Castle", "Jane Eyre", "The Lord of the Rings",
@@ -80,26 +95,26 @@ CATEGORIES = {
         ],
         "general_search": "Books"
     },
-    "Home & Garden > Plants":  {
+    "Home & Garden > Plants": {
         "request_list": [
             "Magnolia", "Moss", "Green Algae", "Peace Lily", "Fern", "Ginkgo", "Daffodil", "Spider Plant", "English Ivy", "Conifer", "Shrub",
             "Spruce", "Rubber Plant", "Sago Palm", "White Lily", "Golden Pothos", "Mass Cane", "Aloe", "Succulent", "Flowers", "Cactus", "Fir"
         ],
         "general_search": "Plants"
     },
-    "Luggage & Bags > Suitcases":  {
+    "Luggage & Bags > Suitcases": {
         "request_list": [
             "Hardside", "Softside", "Leather", "Wheeled", "Hand", "Aluminum", "Polycarbonate", "Polypropylene", "ABS"
         ],
         "general_search": "Suitcases"
     },
-    "Cameras & Optics > Cameras":  {
+    "Cameras & Optics > Cameras": {
         "request_list": [
             "Compact", "DSLR", "Mirrorless", "Action", "360", "Medium Format", "Traditional Film", "GoPro",
             "Canon", "Nikon", "Panasonic", "Sony", "Fujifilm"
         ],
         "general_search": "Cameras"
-    },
+    }
 }
 
 
@@ -108,34 +123,35 @@ if __name__ == "__main__":
     categories = []
 
     for category, search_req in CATEGORIES.items():
-        print(f"\nExtracting {category.split('>')[-1]} URLs...")
+        print(f"\nExtracting {category.split(' > ')[-1]} URLs...")
         # Compute nuber of URLs per category result:
-        nb_results = int(REQUESTS_PER_CATEGORY / (len(search_req["request_list"]) + 1))
+        nb_results = RESULTS_PER_CATEGORY // (len(search_req["request_list"]) + 1) + 1
+        print(f"{nb_results} results per request")
         
         # Make a general category request:
         try:
-            search_results = search(search_req["general_search"] + " buy online", num_results=nb_results, lang="en")
+            search_results = list(search(search_req["general_search"] + " buy online", num_results=nb_results, lang="en"))[:nb_results]
         except requests.exceptions.HTTPError:
-            print(f"Stopped at {category.split('>')[-1]} category")
+            print(f"Stopped at {category.split(' > ')[-1]} category")
             # Save results:
             df = pd.DataFrame(data={"URL": urls, "category": categories})
-            df.to_csv(working_directory + "/sources/input_scraping_train_with_parent.csv")
+            df.to_csv(working_directory + "/sources/input_scraping_train_with_parent.csv", mode='a', header=False)
             exit()
         
         urls.extend(search_results)
         categories.extend([category] * len(search_results))
 
-        time.sleep(5)
+        time.sleep(TIME_DELAY)
 
         # Make some specific requests:
         for req in search_req["request_list"]:
             print(f"Extracting {req} URLs...")
-            search_results = search(req + " " + search_req["general_search"] + " buy online", num_results=nb_results, lang="en")
+            search_results = list(search(req + " " + search_req["general_search"] + " buy online", num_results=nb_results, lang="en"))[:nb_results]
             urls.extend(search_results)
             categories.extend([category] * len(search_results))
 
-            time.sleep(5)
+            time.sleep(TIME_DELAY)
 
     # Save results:
     df = pd.DataFrame(data={"URL": urls, "category": categories})
-    df.to_csv(working_directory + "/sources/input_scraping_train_with_parent.csv")
+    df.to_csv(working_directory + "/sources/input_scraping_train_with_parent.csv", mode='a', header=False)
