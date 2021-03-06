@@ -34,7 +34,7 @@ sites_show_browser = [
     'dell'
 ]
 
-# When to save intermideate results:
+# When to save intermediate results:
 CHECKPOINT = 20
 PREVIOUS_CHECKPOINT = 0
 # Time delay:
