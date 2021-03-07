@@ -9,6 +9,7 @@ from sklearn.model_selection import KFold
 import numpy as np
 import torchvision
 from torchvision import datasets, models, transforms
+from torchcontrib.optim import SWA
 import matplotlib.pyplot as plt
 import time
 import os
@@ -23,6 +24,8 @@ test_dir = data_dir + '/val'
 
 cross_val = True
 k_folds = 5
+
+weighted_acc = True
 
 batch_size = 4
 epochs = 25
@@ -58,13 +61,13 @@ data_transforms = {
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ]),
 }
-train_dataloader, test_dataloader, dataset_sizes, class_names= dataloader(train_dir, test_dir, batch_size, data_transforms)
+train_dataloader, test_dataloader, dataset_sizes, class_names, weights_train, weights_test= dataloader(train_dir, test_dir, batch_size, data_transforms)
 num_classes = len(class_names)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-def train_model(model,train_dataloader, test_dataloader, criterion, optimizer, scheduler, num_epochs):
+def train_model(model,train_dataloader, test_dataloader, criterion, optimizer, scheduler, num_epochs, weights_train=None, weights_test=None):
     since = time.time()
-
+    weights = {'train': weights_train, 'val': weights_test}
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
     accuracies_train = []
@@ -86,6 +89,7 @@ def train_model(model,train_dataloader, test_dataloader, criterion, optimizer, s
 
             running_loss = 0.0
             running_corrects = 0
+            epoch_weighted_accuracy = 0
 
             # Iterate over data.
             for inputs, labels in dataloader:
@@ -106,10 +110,14 @@ def train_model(model,train_dataloader, test_dataloader, criterion, optimizer, s
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
+                        optimizer.update_swa()
 
                 # statistics
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
+                if weighted_acc :
+                    for i in range(len(preds)):
+                        epoch_weighted_accuracy += (1/weights[phase][labels.data[i].item()])*(preds[i]==labels.data[i]).item()
             if phase == 'train':
                 scheduler.step()
 
@@ -125,6 +133,9 @@ def train_model(model,train_dataloader, test_dataloader, criterion, optimizer, s
 
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
+            if weighted_acc :
+                epoch_weighted_accuracy /= num_classes
+                print('Weighted accuracy: {:.4f}'.format(epoch_weighted_accuracy))
 
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
@@ -140,6 +151,7 @@ def train_model(model,train_dataloader, test_dataloader, criterion, optimizer, s
 
     # load best model weights
     model.load_state_dict(best_model_wts)
+    optimizer.swap_swa_sgd()
     return model, accuracies_train, accuracies_test, losses_train, losses_test
 
 
@@ -167,7 +179,12 @@ if cross_val :
             criterion = nn.CrossEntropyLoss()
             # Observe that only parameters of final layer are being optimized as
             # opposed to before.
-            optimizer = optim.SGD(model.fc.parameters(), lr=lr, momentum=momentum)
+            if weighted_acc :
+                base_opt = optim.SGD(model.fc.parameters(), lr=lr, momentum=momentum)
+                optimizer = SWA(base_opt, swa_start=10, swa_freq=5, swa_lr=0.05)
+            else :
+                optimizer = optim.SGD(model.fc.parameters(), lr=lr, momentum=momentum)
+
 
 
         elif model_name in {"alexnet", "vgg11"} :
@@ -177,7 +194,11 @@ if cross_val :
             criterion = nn.CrossEntropyLoss()
             # Observe that only parameters of final layer are being optimized as
             # opposed to before.
-            optimizer = optim.SGD(model.classifier[6].parameters(), lr=lr, momentum=momentum)
+            if weighted_acc :
+                base_opt = optim.SGD(model.classifier[6].parameters(), lr=lr, momentum=momentum)
+                optimizer = SWA(base_opt, swa_start=10, swa_freq=5, swa_lr=0.05)
+            else :
+                optimizer = optim.SGD(model.classifier[6].parameters(), lr=lr, momentum=momentum)
 
         # Decay LR by a factor of 0.1 every 7 epochs
         exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
@@ -193,8 +214,20 @@ if cross_val :
                       dataset,
                       batch_size=batch_size, sampler=test_subsampler)
         dataset_sizes = {'train': len(train_dataloader)*batch_size, 'val':len(test_dataloader)*batch_size}
-
-        _,accuracies_train, accuracies_test,losses_train, losses_test = train_model(model,train_dataloader, test_dataloader, criterion, optimizer, exp_lr_scheduler, num_epochs=epochs)
+        if weighted_acc :
+            weights_train = dict()
+            weights_test = dict()
+            for _,labels in train_dataloader :
+                for label in labels:
+                    if label.item() not in weights_train.keys():
+                        weights_train[label.item()] = 0
+                    weights_train[label.item()] += 1
+            for _,labels in test_dataloader :
+                for label in labels:
+                    if label.item() not in weights_test.keys():
+                        weights_test[label.item()] = 0
+                    weights_test[label.item()] += 1
+        _,accuracies_train, accuracies_test,losses_train, losses_test = train_model(model,train_dataloader, test_dataloader, criterion, optimizer, exp_lr_scheduler, epochs, weights_train, weights_test)
 
         train_accuracy += accuracies_train[-1].item()
         test_accuracy += accuracies_test[-1].item()
@@ -217,7 +250,11 @@ else :
         criterion = nn.CrossEntropyLoss()
         # Observe that only parameters of final layer are being optimized as
         # opposed to before.
-        optimizer = optim.SGD(model.fc.parameters(), lr=lr, momentum=momentum)
+        if weighted_acc :
+            base_opt = optim.SGD(model.fc.parameters(), lr=lr, momentum=momentum)
+            optimizer = SWA(base_opt, swa_start=10, swa_freq=5, swa_lr=0.05)
+        else :
+            optimizer = optim.SGD(model.fc.parameters(), lr=lr, momentum=momentum)
 
 
     elif model_name in {"alexnet", "vgg11"} :
@@ -227,10 +264,14 @@ else :
         criterion = nn.CrossEntropyLoss()
         # Observe that only parameters of final layer are being optimized as
         # opposed to before.
-        optimizer = optim.SGD(model.classifier[6].parameters(), lr=lr, momentum=momentum)
+        if weighted_acc :
+            base_opt = optim.SGD(model.classifier[6].parameters(), lr=lr, momentum=momentum)
+            optimizer = SWA(base_opt, swa_start=10, swa_freq=5, swa_lr=0.05)
+        else :
+            optimizer = optim.SGD(model.classifier[6].parameters(), lr=lr, momentum=momentum)
 
     # Decay LR by a factor of 0.1 every 7 epochs
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
-    model,accuracies_train, accuracies_test,losses_train, losses_test = train_model(model,train_dataloader, test_dataloader, criterion, optimizer, exp_lr_scheduler, num_epochs=epochs)
+    model,accuracies_train, accuracies_test,losses_train, losses_test = train_model(model,train_dataloader, test_dataloader, criterion, optimizer, exp_lr_scheduler, epochs, weights_train, weights_test)
     saveFig(model_name, 'accuracy', accuracies_train, accuracies_test, 2)
     saveFig(model_name, 'loss', losses_train, losses_test, 2)

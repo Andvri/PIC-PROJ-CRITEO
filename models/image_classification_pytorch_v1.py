@@ -60,7 +60,7 @@ data_transforms = {
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ]),
 }
-train_dataloader, test_dataloader, dataset_sizes, class_names= dataloader(train_dir, test_dir, batch_size, data_transforms)
+train_dataloader, test_dataloader, dataset_sizes, class_names, weights_train, weights_test = dataloader(train_dir, test_dir, batch_size, data_transforms)
 num_classes = len(class_names)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
