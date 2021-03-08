@@ -7,3 +7,4 @@
 - Mohamed Ali Elbouri;
 - Mahmoud Amri;
 - Yevhenii Sielskyi
+- Ghaith Sassi
