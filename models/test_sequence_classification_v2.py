@@ -12,8 +12,6 @@ import sys
 def train(model, train_loader, scheduler, optimizer, loss_function, checkpoint=1):
     """
     Fine-tune the given transformer with training sequences
-
-    TODO: add cross-validation with weighted accuracy and the loss (cross-entropy)
     """
 
     model.train()
@@ -55,6 +53,8 @@ def train(model, train_loader, scheduler, optimizer, loss_function, checkpoint=1
 def evaluate(model, test_loader):
     """
     Evaluate performance on test data
+
+    TODO: compute weighted accuracy
     """
 
     model.eval()
@@ -126,26 +126,28 @@ if __name__ == "__main__":
     working_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
     # Sequence lenghts to vary (careful with the long sequences):
-    max_lengths = list(range(25, 60, 10)) + [None]
+    max_lengths = list(range(25, 50, 10)) + [None]
 
 
-    #Kflod for cross validation
+    # Kfold for cross validation
     kfold = KFold(n_splits=5, shuffle=False)
 
     # Make tests, plot results to compare:
-    for transformer_name, (transformer, last_child) in TRANSFORMERS.items():
-        plt.figure(figsize=(15, 10))
-        
-        df = pd.read_csv(DATASET, index_col=0)
+    for transformer_name, (transformer, last_child) in TRANSFORMERS.items():     
+        print("Loading data...")
+        df = pd.read_csv(working_directory + "/sources/" + DATASET, index_col=0)
 
         accuracies = []
         for max_len in max_lengths:
-            print("Loading data...")
             input_ids, attention_masks, labels, num_categories, unique_categories = tokenize_data(
                 df.description.values, df.category.astype("category"),
                 max_len=max_len, tokenizer=transformer
             )
+
             # Download model from huggingface.co:
+
+            # TODO: the model must be reinitialized for every fold,
+            # we can't train the same model on different training sets:
             model = AutoModelForSequenceClassification.from_pretrained(
                 transformer,
                 num_labels=num_categories,
@@ -153,6 +155,7 @@ if __name__ == "__main__":
                 output_hidden_states=False
             )
             model.to(DEVICE)
+            
             # Freeze the entire model except the last layer:
             # We can either re-train the whole transformer
             # or only the last classification layer:
@@ -169,16 +172,14 @@ if __name__ == "__main__":
             dataset = TensorDataset(input_ids, attention_masks, labels)
 
             crossvalidation_dataset = kfold.split(dataset)
-            for fold, (train_ids,validation_ids) in enumerate(crossvalidation_dataset):
+            for fold, (train_ids, validation_ids) in enumerate(crossvalidation_dataset):
                 print(f'FOLD {fold}')
                 print('---------------------------------------------')
                 train_subsampler = torch.utils.data.SubsetRandomSampler(train_ids)
                 validation_subsampler = torch.utils.data.SubsetRandomSampler(validation_ids)
 
-
-                train_loader = DataLoader(dataset, BATCH_SIZE,sampler=train_subsampler)
-                validation_loader = DataLoader(dataset, BATCH_SIZE,sampler=validation_subsampler)
-
+                train_loader = DataLoader(dataset, BATCH_SIZE, sampler=train_subsampler)
+                validation_loader = DataLoader(dataset, BATCH_SIZE, sampler=validation_subsampler)
 
                 # Define optimizer, loss and scheduler:
                 loss_function = CrossEntropyLoss()
@@ -189,30 +190,35 @@ if __name__ == "__main__":
                         num_training_steps=EPOCHS * len(train_loader)
                 )
 
-                print("\nTraining:")
                 start = time()
                 # train:
+                print("\nTraining:")
                 for epoch in range(1, EPOCHS + 1):
                     avg_loss = train(model, train_loader, scheduler, optimizer, loss_function)
-                print(f"Epoch {epoch}: CrossEntropy: {avg_loss}\n")
+                    print(f"Epoch {epoch}: CrossEntropy: {avg_loss}\n")
                 print(time() - start)
+                
                 # evaluate:
                 avg_loss, avg_accuracy, predictions = evaluate(model, validation_loader)
                 print("\nValidation:\n"
                     f"Val CrossEntropy: {avg_loss:.5f}; Val accuracy: {avg_accuracy:.4f}")
 
                 predicted_labels = [unique_categories[idx] for idx in predictions]
+                
+                # TODO: We need to merge validation scores for all folds: mean accuracy.
+                # Also add the variance of accuracies (create another list for variances) after each cross-validation:
                 print(predictions)
                 accuracies.append(avg_accuracy)
 
     # Plot results:
-    plt.plot(max_lengths[:-1] + [65], accuracies)
-    plt.xlim(25, 65)
-    plt.xticks(ticks=max_lengths[:-1] + [65], labels=max_lengths[:-1] + ["None"])
+    plt.figure(figsize=(15, 10))
+    plt.plot(max_lengths[:-1] + [55], accuracies)
+    plt.xlim(25, 55)
+    plt.xticks(ticks=max_lengths[:-1] + [55], labels=max_lengths[:-1] + ["None"])
     plt.xlabel("Sequence length", fontsize=15)
     plt.ylabel("Validation accuracy", fontsize=15)
     plt.legend(list(TRANSFORMERS.keys()))
     plt.title(f"Fine-tuning task (v2) performance", fontsize=20)
     if os.path.exists(working_directory + f"/images"):
         plt.savefig(working_directory + f"/images/fine-tuning_v2.png", dpi=300)
-    # plt.show()
+    plt.show()
