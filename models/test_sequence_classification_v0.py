@@ -103,8 +103,6 @@ if __name__ == "__main__":
     # Make tests, plot results to compare:
     # First tests can be done for only one transformer:
     for transformer_name, (transformer, mean) in TRANSFORMERS.items():
-        plt.figure(figsize=(15, 10))
-
         # Load data:
         print("Loading data...")
         df = pd.read_csv(working_directory + "/sources/" + DATASET, index_col=0)
@@ -163,6 +161,7 @@ if __name__ == "__main__":
             print(f"Accuracy: {accuracy:.5f}")
 
     # Plot results:
+    plt.figure(figsize=(15, 10))
     plt.plot(max_lengths[:-1] + [60], accuracies)
     plt.xlim(5, 60)
     plt.xticks(ticks=max_lengths[:-1] + [60], labels=max_lengths[:-1] + ["None"])

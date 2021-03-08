@@ -128,13 +128,11 @@ if __name__ == "__main__":
 
     # Make tests, plot results to compare:
     for transformer_name, (transformer, last_child) in TRANSFORMERS.items():
-        plt.figure(figsize=(15, 10))
-        
-        df = pd.read_csv(DATASET, index_col=0)
+        print("Loading data...")
+        df = pd.read_csv(working_directory + "/sources/" + DATASET, index_col=0)
 
         accuracies = []
         for max_len in max_lengths:
-            print("Loading data...")
             input_ids, attention_masks, labels, num_categories, unique_categories = tokenize_data(
                 df.description.values, df.category.astype("category"),
                 max_len=max_len, tokenizer=transformer
@@ -197,6 +195,7 @@ if __name__ == "__main__":
             accuracies.append(avg_accuracy)
 
     # Plot results:
+    plt.figure(figsize=(15, 10))
     plt.plot(max_lengths[:-1] + [65], accuracies)
     plt.xlim(25, 65)
     plt.xticks(ticks=max_lengths[:-1] + [65], labels=max_lengths[:-1] + ["None"])
