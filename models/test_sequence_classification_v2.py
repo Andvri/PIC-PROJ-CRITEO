@@ -82,7 +82,8 @@ def evaluate(model, test_loader):
         prediction_list.append(predictions)
 
         avg_loss += loss.item()
-        avg_accuracy += (predictions == labels).sum() / len(predictions) #f1_score(labels, predictions, average='weighted')
+        avg_accuracy += (predictions == labels).sum() / len(predictions) 
+        #avg_accuracy+= f1_score(labels, predictions, average='weighted')
 
     avg_loss /= len(test_loader)
     avg_accuracy /= len(test_loader)
