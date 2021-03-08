@@ -82,8 +82,8 @@ def evaluate(model, test_loader):
         prediction_list.append(predictions)
 
         avg_loss += loss.item()
-        avg_accuracy += (predictions == labels).sum() / len(predictions) 
-        #avg_accuracy+= f1_score(labels, predictions, average='weighted')
+        #avg_accuracy += (predictions == labels).sum() / len(predictions) 
+        avg_accuracy+= f1_score(labels, predictions, average='weighted')
 
     avg_loss /= len(test_loader)
     avg_accuracy /= len(test_loader)
@@ -147,21 +147,7 @@ if __name__ == "__main__":
                 max_len=max_len, tokenizer=transformer
             )
             # Download model from huggingface.co:
-            model = AutoModelForSequenceClassification.from_pretrained(
-                transformer,
-                num_labels=num_categories,
-                output_attentions=False,
-                output_hidden_states=False
-            )
-            model.to(DEVICE)
-            # Freeze the entire model except the last layer:
-            # We can either re-train the whole transformer
-            # or only the last classification layer:
-            for idx, child in enumerate(model.children()):
-                print(f"Child: {idx}")
-                if idx < last_child:
-                    for param in child.parameters():
-                        param.requires_grad = False
+
 
             # For instance, validation and training datasets are split manually,
             # but for Cross-Validation it must be done automatically:
@@ -170,7 +156,26 @@ if __name__ == "__main__":
             dataset = TensorDataset(input_ids, attention_masks, labels)
 
             crossvalidation_dataset = kfold.split(dataset)
+            avg_accuracy = 0.0
+            folds = 0
             for fold, (train_ids,validation_ids) in enumerate(crossvalidation_dataset):
+                model = AutoModelForSequenceClassification.from_pretrained(
+                    transformer,
+                    num_labels=num_categories,
+                    output_attentions=False,
+                    output_hidden_states=False
+                )
+                model.to(DEVICE)
+                # Freeze the entire model except the last layer:
+                # We can either re-train the whole transformer
+                # or only the last classification layer:
+                for idx, child in enumerate(model.children()):
+                    print(f"Child: {idx}")
+                    if idx < last_child:
+                        for param in child.parameters():
+                            param.requires_grad = False
+
+                folds+=1
                 print(f'FOLD {fold}')
                 print('---------------------------------------------')
                 train_subsampler = torch.utils.data.SubsetRandomSampler(train_ids)
@@ -198,13 +203,15 @@ if __name__ == "__main__":
                 print(f"Epoch {epoch}: CrossEntropy: {avg_loss}\n")
                 print(time() - start)
                 # evaluate:
-                avg_loss, avg_accuracy, predictions = evaluate(model, validation_loader)
+                avg_loss, accuracy_, predictions = evaluate(model, validation_loader)
                 print("\nValidation:\n"
                     f"Val CrossEntropy: {avg_loss:.5f}; Val accuracy: {avg_accuracy:.4f}")
 
                 predicted_labels = [unique_categories[idx] for idx in predictions]
                 print(predictions)
-                accuracies.append(avg_accuracy)
+
+                avg_accuracy += accuracy_
+            accuracies.append(avg_accuracy/folds)
 
     # Plot results:
     plt.plot(max_lengths[:-1] + [65], accuracies)
