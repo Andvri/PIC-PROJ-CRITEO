@@ -10,7 +10,6 @@ from time import time
 def train(model, train_loader, scheduler, optimizer, loss_function, checkpoint=1):
     """
     Fine-tune the given transformer with training sequences
-
     TODO: add cross-validation with weighted accuracy and the loss (cross-entropy)
     """
 
@@ -105,7 +104,7 @@ TRANSFORMERS = {
 }
 
 # Datasets to test:
-DATASET = "data_en_train_with_parent.csv"
+DATASET = "data_test_with_parent.csv"
 
 # Hyperparameters:
 EPOCHS = 5
