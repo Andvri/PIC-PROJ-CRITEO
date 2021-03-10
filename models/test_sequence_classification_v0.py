@@ -1,6 +1,8 @@
 import torch
 from torch.nn import CosineSimilarity
 
+from sklearn.metrics import balanced_accuracy_score
+
 from dataloader import tokenize_data, load_data
 from time import time
 
@@ -8,9 +10,6 @@ from time import time
 def train(model, train_loader):
     """
     Compute word embeddings for the input sequences using given pre-trained transformer
-
-    TODO: add actual training pipeline with the resulting mean embeddings for all the categories
-    TODO: add cross-validation with weighted accuracy and the loss (cross-entropy)
     """
 
     model.eval()
@@ -36,6 +35,7 @@ def evaluate(label_embeddings, labels, sample_embeddings, sample_labels, mean=Fa
     for each sequence embedding vector from sample_embeddings
     and take the argmax to predict sequence's category
     """
+
     cos = CosineSimilarity(dim=1)
 
     similarities = []
@@ -51,18 +51,20 @@ def evaluate(label_embeddings, labels, sample_embeddings, sample_labels, mean=Fa
     similarities = torch.vstack(similarities)
     # Make argmax predictions:
     predictions = torch.argmax(similarities, dim=1).flatten()
+    predictions = predictions.detach().cpu()
 
     predicted_categories = torch.tensor([labels[index] for index in predictions])
 
-    # Compute simple (non-weighted) accuracy:
-    accuracy = (predicted_categories == sample_labels).sum() / sample_embeddings.shape[0]
+    # Weighted accuracy:
+    accuracy = balanced_accuracy_score(sample_labels, predicted_categories)
 
+    # Compute simple (non-weighted) accuracy:
+    # accuracy = (predicted_categories == sample_labels).sum() / sample_embeddings.shape[0]
+    
     return predictions, predicted_categories, accuracy
 
 
 # Constants:
-MAX_LEN = 20
-# NUMBER_OF_SAMPLES = 100
 # DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 DEVICE = torch.device("cpu")
 
@@ -79,11 +81,10 @@ TRANSFORMERS = {
 }
 
 # Dataset to test:
-DATASET = "data_en_train_with_parent.csv"
+DATASET = "data_train_with_parent.csv"
 
 # Hyperparameters:
-BATCH_SIZE = 1
-LEARNING_RATE = 1E-4
+BATCH_SIZE = 64
 
 
 if __name__ == "__main__":
@@ -92,36 +93,46 @@ if __name__ == "__main__":
     from matplotlib import pyplot as plt
     from torch.utils.data import TensorDataset
     from transformers import AutoModel, AdamW
+    from IPython.display import display
     
     from dataloader import tokenize_data, load_data
+    from clean_data import clean_descriptions
     
     working_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-    # Sequence lenghts to vary (careful with the long sequences): 
-    max_lengths = list(range(5, 60, 5)) + [None]
+     # Sequence lenghts to vary (careful with the long sequences):
+    max_lengths = list(range(20, 110, 20))
+
+    # Load and clean data:
+    print("Loading data...")
+    df = pd.read_csv(working_directory + "/sources/" + DATASET, index_col=0)
+    df.category = df.category.apply(lambda x: x.replace(" >", ""))
+    df.category = df.category.astype("category")
+    
+    df = clean_descriptions(df)
+    df = df.sample(frac=1, random_state=10)
+    df.reset_index(drop=True, inplace=True)
+    display(df)
 
     # Make tests, plot results to compare:
-    # First tests can be done for only one transformer:
+    plt.figure(figsize=(15, 10))
+    
     for transformer_name, (transformer, mean) in TRANSFORMERS.items():
-        # Load data:
-        print("Loading data...")
-        df = pd.read_csv(working_directory + "/sources/" + DATASET, index_col=0)
-        df.category = df.category.apply(lambda x: x.replace(" >", ""))
-        df.category = df.category.astype("category")
+        print(f"\nTransformer {transformer_name}")
 
         accuracies = []
         for max_len in max_lengths:
             print("Transforming data...")
             # Create a dataset of category embeddings (see dataloader):
             input_ids, attention_masks, labels, num_categories, unique_categories = tokenize_data(
-                df.category.values, df.category,
+                df.category.cat.categories.values, df.category.cat.codes.unique(),
                 max_len=None, tokenizer=transformer
             )
             category_dataset = TensorDataset(input_ids, attention_masks, labels)
 
             # Create a dataset of desctiption/sample embeddings (see dataloader):
             input_ids, attention_masks, labels, num_categories, unique_categories = tokenize_data(
-                df.description.values, df.category,
+                df.description.values, df.category.cat.codes,
                 max_len=max_len, tokenizer=transformer
             )
             description_dataset = TensorDataset(input_ids, attention_masks, labels)
@@ -138,7 +149,7 @@ if __name__ == "__main__":
                 output_hidden_states=False
             )
             model.to(DEVICE)
-
+            
             # Compute embedding vectors:
             cat_embeddings = train(model, train_cat_loader)
             description_embeddings = train(model, test_description_loader)
@@ -159,16 +170,16 @@ if __name__ == "__main__":
             # Output results:
             print(f"\nPredicted category indices: {predicted_categories}")
             print(f"Accuracy: {accuracy:.5f}")
+            
+        # Plot results:
+        plt.plot(max_lengths, accuracies)
 
-    # Plot results:
-    plt.figure(figsize=(15, 10))
-    plt.plot(max_lengths[:-1] + [60], accuracies)
-    plt.xlim(5, 60)
-    plt.xticks(ticks=max_lengths[:-1] + [60], labels=max_lengths[:-1] + ["None"])
+    plt.xlim(20, 100)
+    plt.xticks(ticks=max_lengths, labels=max_lengths)
     plt.xlabel("Sequence length", fontsize=15)
     plt.ylabel("Accuracy", fontsize=15)
     plt.legend(list(TRANSFORMERS.keys()))
     plt.title(f"Similarity task (v0) performance", fontsize=20)
-    if os.path.exists(working_directory + f"/images"):
-        plt.savefig(working_directory + f"/images/similarity_v0.png", dpi=300)
-    # plt.show()
+    if os.path.exists(working_directory + "/images"):
+        plt.savefig(working_directory + "/images/similarity_v0.png", dpi=300)
+    plt.show()
