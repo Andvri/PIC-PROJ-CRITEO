@@ -16,9 +16,12 @@ def tokenize_data(sentences, categories, tokenizer='bert-base-uncased', max_len=
         do_lower_case=True
     )
 
-    unique_categories = categories.unique().tolist()
+    try:
+        unique_categories = categories.unique().tolist()
+    except AttributeError:
+        unique_categories = categories.tolist()
+    
     num_categories = len(unique_categories)
-    labels = categories.cat.codes
 
     if not max_len:
         max_len = 0
@@ -45,7 +48,7 @@ def tokenize_data(sentences, categories, tokenizer='bert-base-uncased', max_len=
         #   (6) Create attention masks for [PAD] tokens.
         encoded_dict = tokenizer.encode_plus(
             sent, # Sentence to encode.
-            add_special_tokens=True, # Add '[CLS]' and '[SEP]'
+            add_special_tokens=False, # Add '[CLS]' and '[SEP]'
             max_length=max_len,
             truncation=True,
             padding='max_length', # Pad & truncate all sentences.
@@ -62,7 +65,7 @@ def tokenize_data(sentences, categories, tokenizer='bert-base-uncased', max_len=
     # Convert the lists into tensors.
     input_ids = torch.cat(input_ids, dim=0)
     attention_masks = torch.cat(attention_masks, dim=0)
-    labels = torch.tensor(labels)
+    labels = torch.tensor(categories)
     
     return input_ids, attention_masks, labels, num_categories, unique_categories
 
