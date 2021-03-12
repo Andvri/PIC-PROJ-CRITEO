@@ -48,7 +48,7 @@ def tokenize_data(sentences, categories, tokenizer='bert-base-uncased', max_len=
         #   (6) Create attention masks for [PAD] tokens.
         encoded_dict = tokenizer.encode_plus(
             sent, # Sentence to encode.
-            add_special_tokens=False, # Add '[CLS]' and '[SEP]'
+            add_special_tokens=True, # Add '[CLS]' and '[SEP]'
             max_length=max_len,
             truncation=True,
             padding='max_length', # Pad & truncate all sentences.
