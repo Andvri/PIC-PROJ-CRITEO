@@ -26,7 +26,6 @@ def train_model(model, train_dataloader, test_dataloader, criterion, optimizer, 
             running_loss = 0.0
             running_corrects = 0
             epoch_weighted_accuracy = 0
-
             # Iterate over data.
             for inputs, labels in dataloader:
                 inputs = inputs.to(device)

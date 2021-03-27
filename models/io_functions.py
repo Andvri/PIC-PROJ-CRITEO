@@ -14,24 +14,37 @@ import time
 import os
 import copy
 
+from sklearn.model_selection import train_test_split
+
 
 import torch
 from torchvision import datasets 
+from torch.utils.data import Subset
+
 
 from saveFig import *
 
-def dataloader(train_dir, test_dir, batch_size, data_transforms):
-    train_dataset = datasets.ImageFolder(train_dir,data_transforms['train'])
-    test_dataset = datasets.ImageFolder(test_dir,data_transforms['val'])
+def dataloader(train_dir, test_dir, batch_size, data_transforms, data_dir = None):
+    if data_dir:
+        data = datasets.ImageFolder(data_dir, data_transforms['train'])
+        train_dataset, test_dataset = train_test_split(data, test_size=0.2)
+        print(len(train_dataset))
+        print(len(test_dataset))
+        class_names = data.classes
+    else:
+        train_dataset = datasets.ImageFolder(train_dir,data_transforms['train'])
+        test_dataset = datasets.ImageFolder(test_dir,data_transforms['val'])
+        class_names = train_dataset.classes
 
     dataset_sizes = {'train': len(train_dataset), 'val':len(test_dataset)}
-    class_names = train_dataset.classes
+    
+    print(class_names)
 
     if batch_size is None :
         return train_dataset, test_dataset, dataset_sizes, class_names
     else :
-        train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,shuffle=True, num_workers=4)
-        test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,shuffle=True, num_workers=4)
+        train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,shuffle=True, num_workers=0)
+        test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,shuffle=True, num_workers=0)
         weights_train, weights_test = weights(train_dataloader, test_dataloader)
         return train_dataloader, test_dataloader, dataset_sizes, class_names, weights_train, weights_test
 
